@@ -2,6 +2,7 @@ import alexa_like_whisper
 import aques_talk
 import openai
 import socket
+import os
 
 def openAIQuery(query):
     response = openai.Completion.create(
@@ -16,17 +17,29 @@ def openAIQuery(query):
 
     return response['choices'][0]['text']
 
+def ChatGPTQuery(query):
+    response = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": "あなたは役に立つアシスタントです。"},
+        {"role": "user", "content": query}
+    ]
+    )
+
+    return response["choices"][0]["message"]["content"]
+
 class Waiting():
     def run(self, result):
         return result
 
 class Talking():
-    def __init__(self):
+    def __init__(self, func):
         self.aqueswriter = aques_talk.AquesTalkWriter()
+        self.func = func
 
     def run(self, result):
         try:
-            self.aqueswriter.response = openAIQuery(result)
+            self.aqueswriter.response = self.func(result)
         except Exception as e:
             print(f'Exception : {str(e)}')
 
@@ -35,9 +48,9 @@ class Talking():
         return message
 
 class M5State():
-    def __init__(self):
+    def __init__(self, func):
         self.waiting = Waiting()
-        self.talking = Talking()
+        self.talking = Talking(func)
         self.state = self.waiting
 
     def change_state(self, result):
@@ -64,7 +77,7 @@ if __name__ == "__main__":
     MODELSIZES = ['tiny', 'base', 'small', 'medium', 'large']
 
     # AccessKey obtained from Picovoice Console (https://console.picovoice.ai/)
-    ACCESS_KEY = ""
+    ACCESS_KEY = os.environ["PICOVOICE_API_KEY"]
     KEYWORD_PATH = ['']
 
     # Recording Time(s)
@@ -73,11 +86,11 @@ if __name__ == "__main__":
     alexa_like = alexa_like_whisper.AlexaLikeWhisper(ACCESS_KEY, KEYWORD_PATH, MODELSIZES[3], RECORDING_TIME)
 
     # Parameters on communication about stackchan
-    M5_IPADDRESS = ''
+    M5_IPADDRESS = os.environ["M5STACK_IP_ADDRESS"]
     M5_PORTNUMBER = 50100
     sender = Sender()
 
-    openai.api_key = ""
+    openai.api_key = os.environ["OPENAI_API_KEY"]
     m5state = M5State()
 
     try:
