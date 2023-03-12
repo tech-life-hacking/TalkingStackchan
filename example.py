@@ -91,7 +91,7 @@ if __name__ == "__main__":
     sender = Sender()
 
     openai.api_key = os.environ["OPENAI_API_KEY"]
-    m5state = M5State()
+    m5state = M5State(ChatGPTQuery)
 
     try:
         while True:
